@@ -1,0 +1,10 @@
+#graphWrapper {
+    width: 960px;
+    margin: 0 auto;
+}
+
+#sigmaCanvas {
+    width: 940px;
+    height: 400px;
+    background-color: #333;
+}

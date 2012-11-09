@@ -1,10 +1,15 @@
 #graphWrapper {
     width: 960px;
     margin: 0 auto;
+    margin-top: 20px;
 }
 
-#sigmaCanvas {
-    width: 940px;
+#graphWrapper #sigmaCanvas {
     height: 400px;
+    width: 940px;
     background-color: #333;
+}
+
+#graphWrapper #scale {
+
 }

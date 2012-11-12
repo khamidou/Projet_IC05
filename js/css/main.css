@@ -13,3 +13,8 @@
 #graphWrapper #scale {
 
 }
+
+.d3-link {
+    stroke: #ccc;
+    stroke-opacity: .6;
+}

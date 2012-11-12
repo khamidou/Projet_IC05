@@ -1,39 +1,54 @@
 $(document).ready(function() {
-    
-    //var sigRoot = document.getElementById("sigmaCanvas");
-    var paper = Raphael(document.getElementById("graphCanvas"), 960, 600);
-    c = paper.circle(320, 240, 30)
-    c.attr({"fill" : "#ccc"});
-    c.animate({"opacity": 0}, 1000);
-    /*
-    sigInst = sigma.init(sigRoot);
-    */
-    
-    var nodeList = [];
+    var width = 960,
+        height = 500;
 
-    /*
-    for(var i = 0; i < 90; i++) {
-        color = 'rgb('+Math.round(Math.random()*256)+','+ Math.round(Math.random()*256)+','+ Math.round(Math.random()*256)+')';
-        sigInst.addNode(i, { color: "#fff", size: 2, x: Math.random(), y: Math.random(), color: color, hidden: true});
-        nodeList.push(i);
-    }
-    */
-    /*
-    for(var i = 0; i < 10; i++) {
-        var index_1 = Math.round(Math.random()*90);
-        var index_2 = Math.round(Math.random()*90);
-        sigInst.addEdge(index_1 * index_2, index_1, index_2); 
-    }
-    */
-   
-    /*
-    sigInst.graphProperties({
-          minNodeSize: 1,
-          maxNodeSize: 10
+    var color = d3.scale.category20();
+
+    var force = d3.layout.force()
+        .charge(-120)
+        .linkDistance(30)
+        .size([width, height]);
+
+    var svg = d3.select("#graphCanvas").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    d3.json("miserables.json", function(json) {
+      force
+          .nodes(json.nodes)
+          .links(json.links)
+          .start();
+
+      var link = svg.selectAll("line.link")
+          .data(json.links)
+        .enter().append("line")
+          .attr("class", "d3-link")
+          .style("stroke-width", function(d) { return Math.sqrt(d.value); })
+          
+
+      var node = svg.selectAll("circle.node")
+          .data(json.nodes)
+        .enter().append("circle")
+          .attr("class", "node")
+          .attr("r", 5)
+          .style("fill", function(d) { return color(d.group); })
+          .call(force.drag)
+      svg.selectAll("circle.node").data(json.nodes).transition().delay(1000).duration(1000).style("opacity", 0);
+
+      node.append("title")
+          .text(function(d) { return d.name; });
+
+      force.on("tick", function() {
+        link.attr("x1", function(d) { return d.source.x; })
+            .attr("y1", function(d) { return d.source.y; })
+            .attr("x2", function(d) { return d.target.x; })
+            .attr("y2", function(d) { return d.target.y; });
+
+        node.attr("cx", function(d) { return d.x; })
+            .attr("cy", function(d) { return d.y; });
+      });
     });
-    sigInst.draw();
-    */
-    harry({
+       harry({
         container: "scale",
         width: 940,
         height: 100,
@@ -69,14 +84,4 @@ $(document).ready(function() {
 });
 
 function plotterMouseoverHandler(n, v, l, x, y) {
-    sigInst.iterNodes(function(n) {
-        if(x % 10 == n.id % 10) {
-                n.hidden = false;
-        } else {
-                n.hidden = true;
-        }
-         
-    });
-
-    sigInst.draw();
 }

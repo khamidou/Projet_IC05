@@ -1,53 +1,8 @@
 $(document).ready(function() {
-    var width = 960,
-        height = 500;
+    d3.json("miserables.json", setup);
+    window.setTimeout(step1, 2000);
+    window.setTimeout(step2, 5000);
 
-    var color = d3.scale.category20();
-
-    var force = d3.layout.force()
-        .charge(-120)
-        .linkDistance(30)
-        .size([width, height]);
-
-    var svg = d3.select("#graphCanvas").append("svg")
-        .attr("width", width)
-        .attr("height", height);
-
-    d3.json("miserables.json", function(json) {
-      force
-          .nodes(json.nodes)
-          .links(json.links)
-          .start();
-
-      var link = svg.selectAll("line.link")
-          .data(json.links)
-        .enter().append("line")
-          .attr("class", "d3-link")
-          .style("stroke-width", function(d) { return Math.sqrt(d.value); })
-          
-
-      var node = svg.selectAll("circle.node")
-          .data(json.nodes)
-        .enter().append("circle")
-          .attr("class", "node")
-          .attr("r", 5)
-          .style("fill", function(d) { return color(d.group); })
-          .call(force.drag)
-      svg.selectAll("circle.node").data(json.nodes).transition().delay(1000).duration(1000).style("opacity", 0);
-
-      node.append("title")
-          .text(function(d) { return d.name; });
-
-      force.on("tick", function() {
-        link.attr("x1", function(d) { return d.source.x; })
-            .attr("y1", function(d) { return d.source.y; })
-            .attr("x2", function(d) { return d.target.x; })
-            .attr("y2", function(d) { return d.target.y; });
-
-        node.attr("cx", function(d) { return d.x; })
-            .attr("cy", function(d) { return d.y; });
-      });
-    });
        harry({
         container: "scale",
         width: 940,
@@ -84,4 +39,94 @@ $(document).ready(function() {
 });
 
 function plotterMouseoverHandler(n, v, l, x, y) {
+}
+
+function setup() {
+    var w = 960,
+        h = 500;
+
+    force = d3.layout.force()
+        .gravity(.05)
+        .distance(100)
+        .charge(-30)
+        .size([w, h]);
+
+    nodes = force.nodes(),
+    links = force.links();
+            
+    vis = d3.select("#graphCanvas").append("svg:svg")
+        .attr("width", w)
+        .attr("height", h);
+
+    force.on("tick", function() {
+      vis.selectAll("g.node")
+          .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+
+      vis.selectAll("line.link")
+          .attr("x1", function(d) { return d.source.x; })
+          .attr("y1", function(d) { return d.source.y; })
+          .attr("x2", function(d) { return d.target.x; })
+          .attr("y2", function(d) { return d.target.y; });
+    });
+}
+
+function restart() {
+  var link = vis.selectAll("line.link")
+      .data(links, function(d) { return d.source.id + "-" + d.target.id; });
+/*
+  link.enter().insert("svg:line", "g.node")
+      .attr("stroke", "white")
+      .transition().duration(4000)
+      .attr("stroke", "black");
+
+  link.exit().remove();
+*/
+  var node = vis.selectAll("g.node")
+      .data(nodes, function(d) { return d.id;});
+	
+  var nodeEnter = node.enter().append("svg:g")
+      .attr("class", "node")
+      .call(force.drag);
+		
+  nodeEnter.append("circle")
+      .attr("class", "circle")
+      .attr("r", "5")
+      .attr("fill", "white")
+      .attr("x", "-8px")
+      .attr("y", "-8px")
+      .attr("width", "16px")
+      .attr("height", "16px")
+      .transition()
+      .duration(4000)
+      .attr("class", "fully_visible")
+      .style("fill", "red");
+
+  nodeEnter.append("svg:text")
+      .attr("class", "nodetext")
+      .attr("dx", 12)
+      .attr("dy", ".35em")
+      .text(function(d) { return d.id });
+
+  node.exit().remove();
+		
+  force.start();
+}
+
+// Add three nodes and three links.
+function step1() {
+  var a = {id: "aaa"}, b = {id: "bbb"}, c = {id: "ccc"};
+  nodes.push(a, b, c);
+  links.push({source: a, target: b}, {source: a, target: c}, {source: b, target: c});
+  restart();
+}
+
+function step2() {
+  var a = {id: "aa"}, b = {id: "bb", weight : 45}, c = {id: "cc"};
+  nodes.push(a, b, c);
+  console.log(links);
+  links.push({source: a, target: b}, {source: a, target: c}, {source: b, target: c});
+  restart();
+  console.log(links[3], links[0]);
+  links.push({source: nodes[0], target: a});
+  restart();
 }

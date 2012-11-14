@@ -18,3 +18,16 @@
     stroke: #ccc;
     stroke-opacity: .6;
 }
+
+.circle {
+    color: blue;
+    background-color: blue;
+}
+
+.link {
+    stroke: #ccc;
+}
+
+.fully_visible {
+    stroke: black;
+}

@@ -1,17 +1,42 @@
-#graphWrapper {
+@import url(http://fonts.googleapis.com/css?family=PT+Sans:700);
+
+body {
+    background-color: #242424;
+    font-family: 'Pt Sans', sans-serif;
     width: 960px;
     margin: 0 auto;
-    margin-top: 20px;
+    color: #FDDB62;
+    background-image: url('../imgs/background.png');
 }
 
-#graphWrapper #sigmaCanvas {
-    height: 400px;
-    width: 940px;
-    background-color: #333;
+h2.title {
+    margin-bottom: 5px;
+    border-bottom: 1px solid #F57343;
+}
+
+#graphWrapper {
+    float: left;
+    width: 760px;
+    margin: 0 auto;
+    background-color: #303030;
 }
 
 #graphWrapper #scale {
 
+}
+
+#legend {
+    float: left;
+    width: 192px;
+    padding-left: 5px;
+    height: 505px;
+//    background: -webkit-linear-gradient( 0deg, #242424, #303030 3%, #474747 85%, #242424 90%);
+//    background: -webkit-linear-gradient( 0deg, #242424, #303030 3%, #242424 95%);
+}
+
+.legend-title {
+    font-size: 18px;
+    margin-bottom: 10px;
 }
 
 .d3-link {
@@ -20,7 +45,6 @@
 }
 
 .circle {
-    color: blue;
     background-color: blue;
 }
 
@@ -29,5 +53,11 @@
 }
 
 .fully_visible {
-    stroke: black;
+    stroke: none;
+    fill: #F57343;
+}
+
+.nodetext {
+    /* fill: #F57343; */
+    fill: #FDDB62;
 }

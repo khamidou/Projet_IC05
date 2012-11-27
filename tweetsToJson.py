@@ -35,10 +35,11 @@ def extractTweets(fileName):
                   expandedUrl = urls['expanded_url']
                   try:
                       u = urllib.urlopen(expandedUrl)
+                      expandedUrl = u.url
                   except (IOError):
+                      print("Error urllib.urlopen")
                       continue
-                  nTweet.urls = [expandedUrl, u.url]
-                  print(nTweet.urls)
+                  nTweet.urls.append(expandedUrl)
 
             for mention in tweet['entities']['user_mentions']:
                 nTweet.userMentions.append({"id":mention["id"],"name":mention["name"], "screenName":mention["screen_name"]})
@@ -83,18 +84,19 @@ def writeJson(tweetList, outputFile):
     for tweet in tweetList:
         if tweet.userName not in nodeList:
             nodeList.append(tweet.userName)
-        for url in tweet.urls:
-            if url[1] not in nodeList:
-                nodeList.append(url[1])
-    
-    #dic = {"nodes":[],"edges":[]}
-    #nodeIndex = 0
-    #for tweet in tweetList:
-    #    dic["nodes"].append({"user_mentions":[], "user_name":tweet.userName})
-    #    for mention in tweet.userMentions:
-    #        dic["nodes"][nodeIndex]["user_mentions"].append(mention["name"])
-    #    nodeIndex += 1
-    #json.dump(dic, open(outputFile,"w"))
+
+        if len(tweet.urls) > 0:
+            for url in tweet.urls:
+                if url not in nodeList:
+                    nodeList.append(url)
+                    edgesList.append({"source":tweet.userName,"destination":url})
+        for mention in tweet.userMentions:
+            if mention["name"] not in nodeList:
+                nodeList.append(mention["name"])
+                edgesList.append({"source":tweet.userName,"destination":mention["name"], "date":tweet.date})
+
+    dic = {"nodes":nodeList,"edges": edgesList}
+    json.dump(dic, open(outputFile,"w"))
 
 inFile = sys.argv[1]
 outFile = sys.argv[2]

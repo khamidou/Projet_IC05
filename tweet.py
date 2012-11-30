@@ -14,3 +14,4 @@ class Tweet:
         self.userId = ""
         self.id = ""
         self.date = ""
+        self.urls = list()

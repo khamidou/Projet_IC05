@@ -83,8 +83,6 @@ def compute_user_score(user, tweetList):
     for tweet in tweetList:
         if tweet.userName != user:
             for mention in tweet.userMentions:
-                #print("-------------")
-                #print (mention["name"] + " "+ user)
                 if mention["name"] == user:
                     count += 1
     return count
@@ -113,7 +111,7 @@ def writeJson(tweetList, outputFile):
                     edgesList.append({"source":tweet.userName,"destination":url_hostname, "date": tweet.date})
         for mention in tweet.userMentions:
             if not any(mention["name"] == node["nodeName"] for node in nodeList):
-                    nodeList.append({"nodeName":mention["name"],"nodeScore":compute_user_score(tweet.userName,tweetList)})
+                    nodeList.append({"nodeName":mention["name"],"nodeScore":compute_user_score(mention["name"],tweetList)})
                     edgesList.append({"source":tweet.userName,"destination":mention["name"], "date":tweet.date, "content":tweet.text})
 
     dic = {"nodes":nodeList,"edges": edgesList}

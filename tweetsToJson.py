@@ -123,12 +123,12 @@ outFile = sys.argv[2]
 tlist = list()
 # if the input file is a directory, parse each file from it
 if (os.path.isdir(inFile)):
-        jsonFiles = os.listdir(inFile)
-        print("Parsing files from "+inFile+"/ ...")
-        for file in jsonFiles:
-            tmpList = (extractTweets(inFile + "/" + file))
-            if (len(tlist) > 0):
-                tmpList = clearDuplicates(tlist, tmpList)
+    jsonFiles = os.listdir(inFile)
+    print("Parsing files from "+inFile+"/ ...")
+    for file in jsonFiles:
+        tmpList = (extractTweets(inFile + "/" + file))
+        if (len(tlist) > 0):
+            tmpList = clearDuplicates(tlist, tmpList)
             tlist.extend(tmpList)
 else:
     tlist = extractTweets(inFile)

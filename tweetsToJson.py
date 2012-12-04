@@ -6,6 +6,7 @@ import json
 import sys
 import os
 import urllib
+from urlparse import urlparse
 from tweet import Tweet
 
 
@@ -77,23 +78,43 @@ def clearDuplicates(tweetList, tmpList):
                 temp.remove(t)
     return temp
 
+def compute_user_score(user, tweetList):
+    count = 0
+    for tweet in tweetList:
+        if tweet.userName != user:
+            for mention in tweet.userMentions:
+                #print("-------------")
+                #print (mention["name"] + " "+ user)
+                if mention["name"] == user:
+                    count += 1
+    return count
+
+def compute_site_score(url, tweetList):
+    count = 0
+    for tweet in tweetList:
+        for turl in tweet.urls:
+            if turl == url:
+                count += 1
+    return count
+
 def writeJson(tweetList, outputFile):
     nodeList = list()
     edgesList = list()
 
     for tweet in tweetList:
-        if tweet.userName not in nodeList:
-            nodeList.append(tweet.userName)
+        if not any (tweet.userName == node["nodeName"] for node in nodeList):
+            nodeList.append({"nodeName":tweet.userName, "nodeScore":compute_user_score(tweet.userName, tweetList)})
 
         if len(tweet.urls) > 0:
             for url in tweet.urls:
-                if url not in nodeList:
-                    nodeList.append(url)
-                    edgesList.append({"source":tweet.userName,"destination":url})
+                url_hostname = urlparse(url).hostname
+                if not any (url_hostname == node["nodeName"] for node in nodeList):
+                    nodeList.append({"nodeName":url_hostname, "nodeScore":compute_site_score(url,tweetList)})
+                    edgesList.append({"source":tweet.userName,"destination":url_hostname, "date": tweet.date})
         for mention in tweet.userMentions:
-            if mention["name"] not in nodeList:
-                nodeList.append(mention["name"])
-                edgesList.append({"source":tweet.userName,"destination":mention["name"], "date":tweet.date})
+            if not any(mention["name"] == node["nodeName"] for node in nodeList):
+                    nodeList.append({"nodeName":mention["name"],"nodeScore":compute_user_score(tweet.userName,tweetList)})
+                    edgesList.append({"source":tweet.userName,"destination":mention["name"], "date":tweet.date, "content":tweet.text})
 
     dic = {"nodes":nodeList,"edges": edgesList}
     json.dump(dic, open(outputFile,"w"))

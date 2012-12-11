@@ -134,20 +134,27 @@ function stepN() {
             var dest = displayed[i]["destination"];
             var src = displayed[i]["source"];
 
+            var nodeTable = {};
+
             // cherche le noeud destination correspondant
+            if(nodeTable[dest] != 1)
             for(var j = 0; j < jsonData["nodes"].length; j++) {
                 if(jsonData["nodes"][j]["nodeName"] == dest) {
                     validNodes.push(jsonData["nodes"][j]);
+                    nodeTable[dest] = 1;
                     break;
                 }
             }
             // fait figurer les noeuds sources 
+            if(nodeTable[src] != 1)
             for(var j = 0; j < jsonData["nodes"].length; j++) {
                 if(jsonData["nodes"][j]["nodeName"] == src) {
                     validNodes.push(jsonData["nodes"][j]);
+                    nodeTable[src] = 1;
                     break;
                 }
             }
+            console.log("nodetable", nodeTable);
  
         }
     }

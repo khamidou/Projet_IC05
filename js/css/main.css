@@ -15,14 +15,23 @@ h2.title {
 }
 
 #graphWrapper {
+    position: relative;
     float: left;
     width: 760px;
     margin: 0 auto;
-    background-color: #303030;
+    background-color: rgba(48, 48, 48, 0.45); /* <=> #303030 */
+    //background-image: url('../imgs/background.png');
+    background-image: -webkit-gradient(0deg, #fff, #000);
 }
 
 #graphWrapper #scale {
 
+}
+
+.ppButton {
+    position: absolute;
+    bottom: 1px;
+    right: 0px;
 }
 
 #legend {

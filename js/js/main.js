@@ -1,20 +1,27 @@
 $(document).ready(function() {
-    d3.json("miserables.json", setup);
+    $(".ppButton").click(handlePlayPause);
+    $.ajax("full.json", {success :setup});
+    /*
     window.setTimeout(step1, 2000);
     window.setTimeout(step2, 5000);
     window.setTimeout(step3, 5000);
+    */
 });
 
 function plotterMouseoverHandler(n, v, l, x, y) {
 }
 
-function setup() {
+var jsonData = {};
+
+function setup(json) {
+    jsonData = json;
+
     var w = 760,
         h = 500;
 
     force = d3.layout.force()
-        .gravity(.05)
-        .distance(100)
+        .gravity(.01)
+        .distance(400)
         .charge(-30)
         .size([w, h]);
 
@@ -35,6 +42,8 @@ function setup() {
           .attr("x2", function(d) { return d.target.x; })
           .attr("y2", function(d) { return d.target.y; });
     });
+    //step2();
+    stepN();
 }
 
 function restart() {
@@ -109,6 +118,70 @@ function step2() {
 function step3() {
    nodes.pop(); 
    restart();
+}
+
+var displayed_nodes = [];
+var count = 0;
+var NUMELEMENTS = 2;
+function stepN() {
+    displayed = jsonData.edges.splice(count, count + NUMELEMENTS); 
+    validEdges = [];
+    validNodes = [];
+
+    for(var i = 0; i < displayed.length; i++) {
+        if("destination" in displayed[i] && "source" in displayed[i]) {
+            validEdges.push(displayed[i]);
+            var dest = displayed[i]["destination"];
+            var src = displayed[i]["source"];
+
+            // cherche le noeud destination correspondant
+            for(var j = 0; j < jsonData["nodes"].length; j++) {
+                if(jsonData["nodes"][j]["nodeName"] == dest) {
+                    validNodes.push(jsonData["nodes"][j]);
+                    break;
+                }
+            }
+            // fait figurer les noeuds sources 
+            for(var j = 0; j < jsonData["nodes"].length; j++) {
+                if(jsonData["nodes"][j]["nodeName"] == src) {
+                    validNodes.push(jsonData["nodes"][j]);
+                    break;
+                }
+            }
+ 
+        }
+    }
+
+    nodes = [];
+    links = [];
+    // ajoute les noeuds
+    for(var j = 0; j < validNodes.length; j++) {
+        nodes.push({id: validNodes[j]["nodeName"], weight: validNodes[j]["nodeScore"]});
+        console.log(nodes[j]);
+    }
+
+    // ajoute les liens
+    for(var j = 0; j < validEdges.length; j++) {
+        links.push({source: validEdges[j]["source"], target: validEdges[j]["destination"]});
+        console.log(links[j]);
+    }
+
+    restart();
+    count += NUMELEMENTS;
+}
+
+var mode = "PAUSED";
+
+function handlePlayPause() {
+    if(mode == "PAUSED") {
+        mode = "PLAYING";
+        $(".ppButton").attr("src", "imgs/pause_24.png"); 
+    } else {
+        mode = "PAUSED";
+        $(".ppButton").attr("src", "imgs/play_24.png"); 
+    }
+
+    stepN();
 }
 
 function setupPlotter() {

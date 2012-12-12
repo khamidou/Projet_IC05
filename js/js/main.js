@@ -16,6 +16,18 @@ var jsonData = {};
 function setup(json) {
     jsonData = json;
 
+    var sigRoot = $('#graphWrapper').get(0);
+    var sigInst = sigma.init(sigRoot);
+    sigInst.addNode('hello',{
+          label: 'Hello',
+          color: '#ff0000'
+    }).addNode('world',{
+          label: 'World !',
+      color: '#00ff00'
+    }).addEdge('hello_world','hello','world').draw();
+    
+    return;
+
     var w = 760,
         h = 500;
 
@@ -120,23 +132,29 @@ function step3() {
    restart();
 }
 
-var displayed_nodes = [];
+var displayed = [];
 var count = 0;
 var NUMELEMENTS = 2;
 function stepN() {
     displayed = jsonData.edges.splice(count, count + NUMELEMENTS); 
-    validEdges = [];
-    validNodes = [];
+    var validEdges = [];
+    var validNodes = [];
 
+    var nodeTable = {};
+
+    // pour chaque chemin
     for(var i = 0; i < displayed.length; i++) {
+        // si c'est un chemin valide
         if("destination" in displayed[i] && "source" in displayed[i]) {
+
+            // l'ajouter à la liste des chemins
             validEdges.push(displayed[i]);
             var dest = displayed[i]["destination"];
             var src = displayed[i]["source"];
 
-            var nodeTable = {};
 
             // cherche le noeud destination correspondant
+            // s'il n'est pas déjà affiché
             if(nodeTable[dest] != 1)
             for(var j = 0; j < jsonData["nodes"].length; j++) {
                 if(jsonData["nodes"][j]["nodeName"] == dest) {
@@ -146,6 +164,7 @@ function stepN() {
                 }
             }
             // fait figurer les noeuds sources 
+            // s'il n'est pas déjà affiché
             if(nodeTable[src] != 1)
             for(var j = 0; j < jsonData["nodes"].length; j++) {
                 if(jsonData["nodes"][j]["nodeName"] == src) {
@@ -154,25 +173,31 @@ function stepN() {
                     break;
                 }
             }
-            console.log("nodetable", nodeTable);
  
         }
     }
 
+    console.log("nodetable", nodeTable);
     nodes = [];
     links = [];
+    nodeTable = {}
+
     // ajoute les noeuds
     for(var j = 0; j < validNodes.length; j++) {
+        var nodename = validNodes[j]["nodeName"];
+        var nodeweight = validNodes[j]["nodeScore"];
         nodes.push({id: validNodes[j]["nodeName"], weight: validNodes[j]["nodeScore"]});
-        console.log(nodes[j]);
+        nodeTable[nodename] ={id: validNodes[j]["nodeName"], weight: 10 /*validNodes[j]["nodeScore"]*/}; 
     }
 
     // ajoute les liens
     for(var j = 0; j < validEdges.length; j++) {
-        links.push({source: validEdges[j]["source"], target: validEdges[j]["destination"]});
-        console.log(links[j]);
+        console.log("tbalkjlk", validEdges[j]["source"], validEdges[j]["destination"]);  
+        links.push({source: nodeTable[validEdges[j]["source"]], target: nodeTable[validEdges[j]["destination"]]});
     }
 
+    console.log(nodes);
+    console.log(links);
     restart();
     count += NUMELEMENTS;
 }
@@ -189,42 +214,4 @@ function handlePlayPause() {
     }
 
     stepN();
-}
-
-function setupPlotter() {
-/*
-       harry({
-        container: "scale",
-        width: 940,
-        height: 100,
-        datas:[
-            {values:[51,52,47,6,5,86,95,93,96,22,55,49,21,21,6,49],color:"#fc0"}],
-        labels:{
-                 x:1,
-          y:[0,50,100],
-          color:"#000",
-          ypos:"center"
-        },
-
-        labels : false, // FIXME: disable label or ask for patch
-        mode:"curve:stack",
-        fill:"solid",
-        linewidth:3,
-        autoscale:"top",
-        mouseover:{
-                 radius:4,
-          linewidth:0,
-          circle:"#fff"
-        },
-        mouseover : {
-            text: plotterMouseoverHandler
-        },
-        legends:{
-          background:"#ccc",
-          color:"#fff",
-          border:"#fff"
-                 },
-          bg:"black"
-    });
-*/
 }

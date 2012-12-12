@@ -1,5 +1,4 @@
 $(document).ready(function() {
-    $(".ppButton").click(handlePlayPause);
     $.ajax("full.json", {success :setup});
     /*
     window.setTimeout(step1, 2000);
@@ -18,118 +17,55 @@ function setup(json) {
 
     var sigRoot = $('#graphWrapper').get(0);
     var sigInst = sigma.init(sigRoot);
-    sigInst.addNode('hello',{
-          label: 'Hello',
-          color: '#ff0000'
-    }).addNode('world',{
-          label: 'World !',
-      color: '#00ff00'
-    }).addEdge('hello_world','hello','world').draw();
-    
+    sigInst.graphProperties({minNodeSize: 1, maxNodeSize: 50});
+   
+    draw(jsonData, sigInst);
     return;
-
-    var w = 760,
-        h = 500;
-
-    force = d3.layout.force()
-        .gravity(.01)
-        .distance(400)
-        .charge(-30)
-        .size([w, h]);
-
-    nodes = force.nodes(),
-    links = force.links();
-            
-    vis = d3.select("#graphCanvas").append("svg:svg")
-        .attr("width", w)
-        .attr("height", h);
-
-    force.on("tick", function() {
-      vis.selectAll("g.node")
-          .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
-
-      vis.selectAll("line.link")
-          .attr("x1", function(d) { return d.source.x; })
-          .attr("y1", function(d) { return d.source.y; })
-          .attr("x2", function(d) { return d.target.x; })
-          .attr("y2", function(d) { return d.target.y; });
-    });
-    //step2();
-    stepN();
 }
 
-function restart() {
-  var link = vis.selectAll("line.link")
-      .data(links, function(d) { return d.source.id + "-" + d.target.id; });
-/*
-  link.enter().insert("svg:line", "g.node")
-      .attr("stroke", "white")
-      .transition().duration(4000)
-      .attr("stroke", "black");
-
-  link.exit().remove();
-*/
-  var node = vis.selectAll("g.node")
-      .data(nodes, function(d) { return d.id;});
-	
-  var nodeEnter = node.enter().append("svg:g")
-      .attr("class", "node")
-      .call(force.drag);
-  
-  nodeEnter.append("svg:text")
-      .attr("dx", 12)
-      .attr("dy", ".35em")
-      .text(function(d) { return d.id })
-      .transition()
-      .attr("class", "nodetext")
-
-  nodeEnter.append("svg:title")
-      .text("pkpmlkmlkmlk http://reddit.com");
-	
-  nodeEnter.append("circle")
-      .attr("class", "circle")
-      .attr("r", "5")
-      .attr("fill", "white")
-      .attr("stroke", "none")
-      .attr("x", "-8px")
-      .attr("y", "-8px")
-      .attr("width", "16px")
-      .attr("height", "16px")
-      .transition()
-      .duration(2500)
-      .attr("class", "fully_visible")
-      .attr("r", "10")
-
-  node.exit().remove();
-		
-  force.start();
-}
-
-// Add three nodes and three links.
-function step1() {
-  var a = {id: "aaa"}, b = {id: "bbb", weight: 45}, c = {id: "ccc"};
-  nodes.push(a, b, c);
-  links.push({source: a, target: b}, {source: a, target: c}, {source: b, target: c});
+function draw(data, sigInst) {
+    var created_nodes = {}
+    for(var i = 0; i < data["nodes"].length; i++) {
+        var size = data["nodes"][i]["nodeScore"]; 
+        var name =data["nodes"][i]["nodeName"]; 
+        
+        var color = "#c00"; // user
+        if(name.split(".").length > 1)
+            color = "#00c"; // site web
+ 
+        if(size > 2) {
+            sigInst.addNode(name, {x: Math.random(), y: Math.random(), size: size, color: color});
+            created_nodes[name] = 1;
+        }
+    }
+    
+    for(var i = 0; i < data["edges"].length; i++) {
+        var source = data["edges"][i]["source"]; 
+        var dest = data["edges"][i]["destination"]; 
+        if(created_nodes[source] == 1 && created_nodes[dest] == 1)
+            sigInst.addEdge(i, source, dest);
+    }
 
 
-
-  restart();
-}
-
-function step2() {
-  var a = {id: "aa"}, b = {id: "bb", weight : 45}, c = {id: "cc"}, d = {id: "dd"};
-  nodes.push(a, b, c, d);
-  console.log(links);
-  links.push({source: a, target: b}, {source: a, target: c}, {source: b, target: c});
-  restart();
-  console.log(links[3], links[0]);
-  links.push({source: nodes[0], target: a});  
-  restart();
-}
-
-function step3() {
-   nodes.pop(); 
-   restart();
+    sigInst.startForceAtlas2();
+     
+      var isRunning = true;
+      document.getElementById('stop-layout').addEventListener('click',function(){
+        if(isRunning){
+          isRunning = false;
+          sigInst.stopForceAtlas2();
+          document.getElementById('stop-layout').childNodes[0].nodeValue = 'Start Layout';
+        }else{
+          isRunning = true;
+          sigInst.startForceAtlas2();
+          document.getElementById('stop-layout').childNodes[0].nodeValue = 'Stop Layout';
+        }
+      },true);
+      document.getElementById('rescale-graph').addEventListener('click',function(){
+        sigInst.position(0,0,1).draw();
+      },true);
+    
+      sigInst.draw();
 }
 
 var displayed = [];
@@ -200,18 +136,4 @@ function stepN() {
     console.log(links);
     restart();
     count += NUMELEMENTS;
-}
-
-var mode = "PAUSED";
-
-function handlePlayPause() {
-    if(mode == "PAUSED") {
-        mode = "PLAYING";
-        $(".ppButton").attr("src", "imgs/pause_24.png"); 
-    } else {
-        mode = "PAUSED";
-        $(".ppButton").attr("src", "imgs/play_24.png"); 
-    }
-
-    stepN();
 }

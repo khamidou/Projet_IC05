@@ -1,6 +1,6 @@
-#! /usr/bin/python
+#! /usr/bin/env python2
 #
-# usage: convert input_file output_file
+# usage: tweetsToJson input_file output_file
 # 
 import json
 import sys
@@ -101,26 +101,36 @@ def writeJson(tweetList, outputFile):
 
     for tweet in tweetList:
         if not any (tweet.userName == node["nodeName"] for node in nodeList):
-            nodeList.append({"nodeName":tweet.userName, "nodeScore":compute_user_score(tweet.userName, tweetList)})
+            nodeList.append({"nodeName":tweet.userName, "avatar": tweet.profileImgUrlHttp, "nodeScore":compute_user_score(tweet.userName, tweetList), "webSite":False})
 
         if len(tweet.urls) > 0:
             for url in tweet.urls:
                 url_hostname = urlparse(url).hostname
                 if not any (url_hostname == node["nodeName"] for node in nodeList):
-                    nodeList.append({"nodeName":url_hostname, "nodeScore":compute_site_score(url,tweetList)})
-                    edgesList.append({"source":tweet.userName,"destination":url_hostname, "date": tweet.date})
+                    nodeList.append({"nodeName":url_hostname, "nodeScore":compute_site_score(url,tweetList),"website":True})
+                    edgesList.append({"source":tweet.userName,"destination":url_hostname, "url":url ,"date": tweet.date})
         for mention in tweet.userMentions:
             if not any(mention["name"] == node["nodeName"] for node in nodeList):
-                    nodeList.append({"nodeName":mention["name"],"nodeScore":compute_user_score(mention["name"],tweetList)})
-                    edgesList.append({"source":tweet.userName,"destination":mention["name"], "date":tweet.date, "content":tweet.text})
+                nodeList.append({"nodeName":mention["name"],"nodeScore":compute_user_score(mention["name"],tweetList), "webSite":False})
+                edgesList.append({"source":tweet.userName,"destination":mention["name"], "date":tweet.date, "content":tweet.text})
 
+    edgesList.sort(key=lambda r: r["date"])
     dic = {"nodes":nodeList,"edges": edgesList}
     json.dump(dic, open(outputFile,"w"))
+
+if (len(sys.argv) < 3):
+    print( """
+    usage:  tweetsToJson input output_file
+    - input: input file or directory
+    - output: output file
+    """)
+    sys.exit()
 
 inFile = sys.argv[1]
 outFile = sys.argv[2]
 
 tlist = list()
+cpt = 0
 # if the input file is a directory, parse each file from it
 if (os.path.isdir(inFile)):
     jsonFiles = os.listdir(inFile)
@@ -129,7 +139,12 @@ if (os.path.isdir(inFile)):
         tmpList = (extractTweets(inFile + "/" + file))
         if (len(tlist) > 0):
             tmpList = clearDuplicates(tlist, tmpList)
-            tlist.extend(tmpList)
+        tlist.extend(tmpList)
+        if (cpt % 10 == 0 and cpt > 0):
+            writeJson(tlist,outFile)
+            x = cpt / len(tlist) * 100
+            print("%.2f%% done" % x)
+        cpt += 1
 else:
     tlist = extractTweets(inFile)
 

@@ -4,7 +4,7 @@
 # 
 import json
 import sys
-import os
+import os, errno
 import urllib
 from urlparse import urlparse
 from tweet import Tweet
@@ -37,8 +37,10 @@ def extractTweets(fileName):
                   try:
                       u = urllib.urlopen(expandedUrl)
                       expandedUrl = u.url
-                  except (IOError):
+                      u = None
+                  except IOError as ioe:
                       print("Error urllib.urlopen")
+                      print("---> URL = {}".format(expandedUrl))
                       continue
                   nTweet.urls.append(expandedUrl)
 
@@ -95,6 +97,15 @@ def compute_site_score(url, tweetList):
                 count += 1
     return count
 
+def get_articles(hostname,tweetList):
+    url_list = list()
+    for tweet in tweetList:
+        for url in tweet.urls:
+            if hostname == urlparse(url).hostname:
+                if url not in url_list:
+                    url_list.append(url)
+    return url_list
+
 def writeJson(tweetList, outputFile):
     nodeList = list()
     edgesList = list()
@@ -107,7 +118,7 @@ def writeJson(tweetList, outputFile):
             for url in tweet.urls:
                 url_hostname = urlparse(url).hostname
                 if not any (url_hostname == node["nodeName"] for node in nodeList):
-                    nodeList.append({"nodeName":url_hostname, "nodeScore":compute_site_score(url,tweetList),"website":True})
+                    nodeList.append({"nodeName":url_hostname, "nodeScore":compute_site_score(url,tweetList),"website":True, "articles": get_articles(url_hostname,tweetList)})
                     edgesList.append({"source":tweet.userName,"destination":url_hostname, "url":url ,"date": tweet.date})
         for mention in tweet.userMentions:
             if not any(mention["name"] == node["nodeName"] for node in nodeList):

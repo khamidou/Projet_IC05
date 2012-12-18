@@ -1,5 +1,6 @@
+FILTER_NODE_SIZE = 0;
 $(document).ready(function() {
-    $.ajax("full.json", {success :setup});
+    $.ajax("extract.json", {success :setup});
     /*
     window.setTimeout(step1, 2000);
     window.setTimeout(step2, 5000);
@@ -17,7 +18,30 @@ function setup(json) {
 
     var sigRoot = $('#graphWrapper').get(0);
     var sigInst = sigma.init(sigRoot);
-    sigInst.graphProperties({minNodeSize: 1, maxNodeSize: 50});
+    sigInst.graphProperties({minNodeSize: 1, maxNodeSize: 50, defaultEdgeType: 'curve', defaultEdgeColor: '#ccc'});
+    sigInst.bind('overnodes', function(event) {
+        var nodeName = event.content;       
+
+        var i = 0;
+        var node = _.find(json["nodes"], function(node) { return node["nodeName"] == nodeName });
+        if(node == null)
+            return;
+        
+    console.log(node, node["webSite"])
+        if(node["website"] == true) {
+            var siteTempl = _.template("<div class='siteTempl'><%= siteName %><ul> " + 
+                                      "<% _.each(articles, function(article) { %> <li> <a href='<%= article %>'><%= article %></a> </li><% });%></ul></div>");
+            var txt = siteTempl({"siteName" : node["nodeName"], articles: node["articles"]});
+            $("#rightNav").html(txt);
+        } else if(node["webSite"] == false) {
+            var siteTempl = _.template("<div class='userTempl'><img src='<%= avatar %>'></img><%= userName %>");
+
+            var txt = siteTempl({"userName" : node["nodeName"], avatar: node["avatar"]});
+            $("#rightNav").html(txt);
+
+            console.log("user");
+        }
+    });
    
     draw(jsonData, sigInst);
     return;
@@ -33,7 +57,7 @@ function draw(data, sigInst) {
         if(name.split(".").length > 1)
             color = "#00c"; // site web
  
-        if(size > 2) {
+        if(size > FILTER_NODE_SIZE) {
             sigInst.addNode(name, {x: Math.random(), y: Math.random(), size: size, color: color});
             created_nodes[name] = 1;
         }
@@ -42,13 +66,16 @@ function draw(data, sigInst) {
     for(var i = 0; i < data["edges"].length; i++) {
         var source = data["edges"][i]["source"]; 
         var dest = data["edges"][i]["destination"]; 
-        if(created_nodes[source] == 1 && created_nodes[dest] == 1)
+        if(created_nodes[source] == 1 && created_nodes[dest] == 1) {
             sigInst.addEdge(i, source, dest);
+            console.log("created " + source + " -> " + dest);
+        }
     }
 
 
     sigInst.startForceAtlas2();
      
+    /*
       var isRunning = true;
       document.getElementById('stop-layout').addEventListener('click',function(){
         if(isRunning){
@@ -64,7 +91,7 @@ function draw(data, sigInst) {
       document.getElementById('rescale-graph').addEventListener('click',function(){
         sigInst.position(0,0,1).draw();
       },true);
-    
+    */
       sigInst.draw();
 }
 

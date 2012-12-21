@@ -1,6 +1,6 @@
+FILTER_NODE_SIZE = 0;
 $(document).ready(function() {
-    $(".ppButton").click(handlePlayPause);
-    $.ajax("full.json", {success :setup});
+    $.ajax("extract.json", {success :setup});
     /*
     window.setTimeout(step1, 2000);
     window.setTimeout(step2, 5000);
@@ -16,127 +16,108 @@ var jsonData = {};
 function setup(json) {
     jsonData = json;
 
-    var w = 760,
-        h = 500;
+    var sigRoot = $('#graphWrapper').get(0);
+    var sigInst = sigma.init(sigRoot);
+    sigInst.graphProperties({minNodeSize: 1, maxNodeSize: 50, defaultEdgeType: 'curve', defaultEdgeColor: '#ccc'});
+    sigInst.bind('overnodes', function(event) {
+        var nodeName = event.content;       
 
-    force = d3.layout.force()
-        .gravity(.01)
-        .distance(400)
-        .charge(-30)
-        .size([w, h]);
+        var i = 0;
+        var node = _.find(json["nodes"], function(node) { return node["nodeName"] == nodeName });
+        if(node == null)
+            return;
+        
+    console.log(node, node["webSite"])
+        if(node["website"] == true) {
+            var siteTempl = _.template("<div class='siteTempl'><%= siteName %><ul> " + 
+                                      "<% _.each(articles, function(article) { %> <li> <a href='<%= article %>'><%= article %></a> </li><% });%></ul></div>");
+            var txt = siteTempl({"siteName" : node["nodeName"], articles: node["articles"]});
+            $("#rightNav").html(txt);
+        } else if(node["webSite"] == false) {
+            var siteTempl = _.template("<div class='userTempl'><img src='<%= avatar %>'></img><%= userName %>");
 
-    nodes = force.nodes(),
-    links = force.links();
-            
-    vis = d3.select("#graphCanvas").append("svg:svg")
-        .attr("width", w)
-        .attr("height", h);
+            var txt = siteTempl({"userName" : node["nodeName"], avatar: node["avatar"]});
+            $("#rightNav").html(txt);
 
-    force.on("tick", function() {
-      vis.selectAll("g.node")
-          .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
-
-      vis.selectAll("line.link")
-          .attr("x1", function(d) { return d.source.x; })
-          .attr("y1", function(d) { return d.source.y; })
-          .attr("x2", function(d) { return d.target.x; })
-          .attr("y2", function(d) { return d.target.y; });
+            console.log("user");
+        }
     });
-    //step2();
-    stepN();
+   
+    draw(jsonData, sigInst);
+    return;
 }
 
-function restart() {
-  var link = vis.selectAll("line.link")
-      .data(links, function(d) { return d.source.id + "-" + d.target.id; });
-/*
-  link.enter().insert("svg:line", "g.node")
-      .attr("stroke", "white")
-      .transition().duration(4000)
-      .attr("stroke", "black");
+function draw(data, sigInst) {
+    var created_nodes = {}
+    for(var i = 0; i < data["nodes"].length; i++) {
+        var size = data["nodes"][i]["nodeScore"]; 
+        var name =data["nodes"][i]["nodeName"]; 
+        
+        var color = "#c00"; // user
+        if(name.split(".").length > 1)
+            color = "#00c"; // site web
+ 
+        if(size > FILTER_NODE_SIZE) {
+            sigInst.addNode(name, {x: Math.random(), y: Math.random(), size: size, color: color});
+            created_nodes[name] = 1;
+        }
+    }
+    
+    for(var i = 0; i < data["edges"].length; i++) {
+        var source = data["edges"][i]["source"]; 
+        var dest = data["edges"][i]["destination"]; 
+        if(created_nodes[source] == 1 && created_nodes[dest] == 1) {
+            sigInst.addEdge(i, source, dest);
+            console.log("created " + source + " -> " + dest);
+        }
+    }
 
-  link.exit().remove();
-*/
-  var node = vis.selectAll("g.node")
-      .data(nodes, function(d) { return d.id;});
-	
-  var nodeEnter = node.enter().append("svg:g")
-      .attr("class", "node")
-      .call(force.drag);
-  
-  nodeEnter.append("svg:text")
-      .attr("dx", 12)
-      .attr("dy", ".35em")
-      .text(function(d) { return d.id })
-      .transition()
-      .attr("class", "nodetext")
 
-  nodeEnter.append("svg:title")
-      .text("pkpmlkmlkmlk http://reddit.com");
-	
-  nodeEnter.append("circle")
-      .attr("class", "circle")
-      .attr("r", "5")
-      .attr("fill", "white")
-      .attr("stroke", "none")
-      .attr("x", "-8px")
-      .attr("y", "-8px")
-      .attr("width", "16px")
-      .attr("height", "16px")
-      .transition()
-      .duration(2500)
-      .attr("class", "fully_visible")
-      .attr("r", "10")
-
-  node.exit().remove();
-		
-  force.start();
+    sigInst.startForceAtlas2();
+     
+    /*
+      var isRunning = true;
+      document.getElementById('stop-layout').addEventListener('click',function(){
+        if(isRunning){
+          isRunning = false;
+          sigInst.stopForceAtlas2();
+          document.getElementById('stop-layout').childNodes[0].nodeValue = 'Start Layout';
+        }else{
+          isRunning = true;
+          sigInst.startForceAtlas2();
+          document.getElementById('stop-layout').childNodes[0].nodeValue = 'Stop Layout';
+        }
+      },true);
+      document.getElementById('rescale-graph').addEventListener('click',function(){
+        sigInst.position(0,0,1).draw();
+      },true);
+    */
+      sigInst.draw();
 }
 
-// Add three nodes and three links.
-function step1() {
-  var a = {id: "aaa"}, b = {id: "bbb", weight: 45}, c = {id: "ccc"};
-  nodes.push(a, b, c);
-  links.push({source: a, target: b}, {source: a, target: c}, {source: b, target: c});
-
-
-
-  restart();
-}
-
-function step2() {
-  var a = {id: "aa"}, b = {id: "bb", weight : 45}, c = {id: "cc"}, d = {id: "dd"};
-  nodes.push(a, b, c, d);
-  console.log(links);
-  links.push({source: a, target: b}, {source: a, target: c}, {source: b, target: c});
-  restart();
-  console.log(links[3], links[0]);
-  links.push({source: nodes[0], target: a});  
-  restart();
-}
-
-function step3() {
-   nodes.pop(); 
-   restart();
-}
-
-var displayed_nodes = [];
+var displayed = [];
 var count = 0;
 var NUMELEMENTS = 2;
 function stepN() {
     displayed = jsonData.edges.splice(count, count + NUMELEMENTS); 
-    validEdges = [];
-    validNodes = [];
+    var validEdges = [];
+    var validNodes = [];
 
+    var nodeTable = {};
+
+    // pour chaque chemin
     for(var i = 0; i < displayed.length; i++) {
+        // si c'est un chemin valide
         if("destination" in displayed[i] && "source" in displayed[i]) {
+
+            // l'ajouter à la liste des chemins
             validEdges.push(displayed[i]);
             var dest = displayed[i]["destination"];
             var src = displayed[i]["source"];
 
-            var nodeTable = {};
 
             // cherche le noeud destination correspondant
+            // s'il n'est pas déjà affiché
             if(nodeTable[dest] != 1)
             for(var j = 0; j < jsonData["nodes"].length; j++) {
                 if(jsonData["nodes"][j]["nodeName"] == dest) {
@@ -146,6 +127,7 @@ function stepN() {
                 }
             }
             // fait figurer les noeuds sources 
+            // s'il n'est pas déjà affiché
             if(nodeTable[src] != 1)
             for(var j = 0; j < jsonData["nodes"].length; j++) {
                 if(jsonData["nodes"][j]["nodeName"] == src) {
@@ -154,77 +136,31 @@ function stepN() {
                     break;
                 }
             }
-            console.log("nodetable", nodeTable);
  
         }
     }
 
+    console.log("nodetable", nodeTable);
     nodes = [];
     links = [];
+    nodeTable = {}
+
     // ajoute les noeuds
     for(var j = 0; j < validNodes.length; j++) {
+        var nodename = validNodes[j]["nodeName"];
+        var nodeweight = validNodes[j]["nodeScore"];
         nodes.push({id: validNodes[j]["nodeName"], weight: validNodes[j]["nodeScore"]});
-        console.log(nodes[j]);
+        nodeTable[nodename] ={id: validNodes[j]["nodeName"], weight: 10 /*validNodes[j]["nodeScore"]*/}; 
     }
 
     // ajoute les liens
     for(var j = 0; j < validEdges.length; j++) {
-        links.push({source: validEdges[j]["source"], target: validEdges[j]["destination"]});
-        console.log(links[j]);
+        console.log("tbalkjlk", validEdges[j]["source"], validEdges[j]["destination"]);  
+        links.push({source: nodeTable[validEdges[j]["source"]], target: nodeTable[validEdges[j]["destination"]]});
     }
 
+    console.log(nodes);
+    console.log(links);
     restart();
     count += NUMELEMENTS;
-}
-
-var mode = "PAUSED";
-
-function handlePlayPause() {
-    if(mode == "PAUSED") {
-        mode = "PLAYING";
-        $(".ppButton").attr("src", "imgs/pause_24.png"); 
-    } else {
-        mode = "PAUSED";
-        $(".ppButton").attr("src", "imgs/play_24.png"); 
-    }
-
-    stepN();
-}
-
-function setupPlotter() {
-/*
-       harry({
-        container: "scale",
-        width: 940,
-        height: 100,
-        datas:[
-            {values:[51,52,47,6,5,86,95,93,96,22,55,49,21,21,6,49],color:"#fc0"}],
-        labels:{
-                 x:1,
-          y:[0,50,100],
-          color:"#000",
-          ypos:"center"
-        },
-
-        labels : false, // FIXME: disable label or ask for patch
-        mode:"curve:stack",
-        fill:"solid",
-        linewidth:3,
-        autoscale:"top",
-        mouseover:{
-                 radius:4,
-          linewidth:0,
-          circle:"#fff"
-        },
-        mouseover : {
-            text: plotterMouseoverHandler
-        },
-        legends:{
-          background:"#ccc",
-          color:"#fff",
-          border:"#fff"
-                 },
-          bg:"black"
-    });
-*/
 }

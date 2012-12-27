@@ -17,7 +17,7 @@ def extractTweets(fileName):
         file = open(fileName)
         json_str = file.read()
         data = json.loads(json_str)
-
+        print("Parsing "+fileName+" ...")
         for tweet in data['results']:
             nTweet = Tweet()
             nTweet.id = tweet['id']
@@ -112,7 +112,7 @@ def writeJson(tweetList, outputFile):
 
     for tweet in tweetList:
         if not any (tweet.userName == node["nodeName"] for node in nodeList):
-            nodeList.append({"nodeName":tweet.userName, "avatar": tweet.profileImgUrlHttp, "nodeScore":compute_user_score(tweet.userName, tweetList), "webSite":False})
+            nodeList.append({"userId":tweet.user, "nodeName":tweet.userName, "avatar": tweet.profileImgUrlHttp, "nodeScore":compute_user_score(tweet.userName, tweetList), "webSite":False})
 
         if len(tweet.urls) > 0:
             for url in tweet.urls:
@@ -122,7 +122,7 @@ def writeJson(tweetList, outputFile):
                     edgesList.append({"source":tweet.userName,"destination":url_hostname, "url":url ,"date": tweet.date})
         for mention in tweet.userMentions:
             if not any(mention["name"] == node["nodeName"] for node in nodeList):
-                nodeList.append({"nodeName":mention["name"],"nodeScore":compute_user_score(mention["name"],tweetList), "webSite":False})
+                nodeList.append({"userId":mention["screenName"] ,"nodeName":mention["name"],"nodeScore":compute_user_score(mention["name"],tweetList), "webSite":False})
                 edgesList.append({"source":tweet.userName,"destination":mention["name"], "date":tweet.date, "content":tweet.text})
 
     edgesList.sort(key=lambda r: r["date"])
